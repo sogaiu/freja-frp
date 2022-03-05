@@ -76,7 +76,7 @@
 #   @{@[:down [10 10]]  [|(print "hello") |(print "other")]}
 #     ^ a mouse event   ^ queued callbacks
 #     ^ is actually a ev/chan
-#     ^ but using struct to visualise
+#     ^ but using array to visualise
 (def callbacks
   @{:event/changed false})
 
