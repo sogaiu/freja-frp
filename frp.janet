@@ -43,16 +43,14 @@
 (defn handle-keys
   [dt]
   (var k (fj/get-char-pressed))
-
+  #
   (while (not= 0 k)
     (e/push! chars @[:char k])
     (set k (fj/get-char-pressed)))
-
   # must release keys before...
   (loop [k :in kb/possible-keys]
     (when (fj/key-released? k)
       (e/push! keyboard @[:key-release k])))
-
   # ...checking for held keys
   (loop [[k dl] :pairs state/keys-down
          # might just have been released
@@ -60,7 +58,7 @@
          :let [left ((update state/keys-down k - dt) k)]]
     (when (<= left 0)
       (e/push! keyboard @[:key-repeat k])))
-
+  #
   (loop [k :in kb/possible-keys]
     (when (fj/key-pressed? k)
       (e/push! keyboard @[:key-down k]))))
@@ -72,11 +70,13 @@
       (e/push! mouse
                @[:scroll (* move 30) (fj/get-mouse-position)]))))
 
-# table of callbacks, eg
-#   @{@[:down [10 10]]  [|(print "hello") |(print "other")]}
-#     ^ a mouse event   ^ queued callbacks
+# table of callbacks, e.g.
+#
+#   @{@[:down [10 10]]         [|(print "hello") |(print "other")]}
+#
+#     ^ a mouse event          ^ queued callbacks
 #     ^ is actually a ev/chan
-#     ^ but using array to visualise
+#     ^ but using an array here to visualise
 (def callbacks
   @{:event/changed false})
 
@@ -99,28 +99,29 @@
   (loop [[ev cbs] :pairs callbacks
          :when (not= ev :event/changed)]
     (e/pull-all cbs [apply]))
-
+  #
   (loop [k :in (keys callbacks)]
     (put callbacks k nil)))
 
-(def mouse-data (i/new-mouse-data))
+(def mouse-data
+  (i/new-mouse-data))
 
 (varfn handle-mouse
   [mouse-data]
   (def pos (fj/get-mouse-position))
   (def [x y] pos)
-
+  #
   (put mouse-data :just-double-clicked false)
   (put mouse-data :just-triple-clicked false)
-
+  #
   (when (fj/mouse-button-released? 0)
     (put mouse-data :just-down nil)
     (put mouse-data :recently-double-clicked nil)
     (put mouse-data :recently-triple-clicked nil)
     (put mouse-data :up-pos [x y])
-
+    #
     (e/push! mouse @[:release (fj/get-mouse-position)]))
-
+  #
   (when (fj/mouse-button-pressed? 0)
     (when (and (mouse-data :down-time2)
                # max time to pass for triple click
@@ -129,7 +130,7 @@
                (> 200 (v/dist-sqr pos (mouse-data :down-pos))))
       (put mouse-data :just-triple-clicked true)
       (put mouse-data :recently-triple-clicked true))
-
+    #
     (when (and (mouse-data :down-time)
                # max time to pass for double click
                (> 0.25 (- (fj/get-time) (mouse-data :down-time)))
@@ -138,7 +139,7 @@
       (put mouse-data :just-double-clicked true)
       (put mouse-data :recently-double-clicked true)
       (put mouse-data :down-time2 (fj/get-time))))
-
+  #
   (cond
     (mouse-data :just-triple-clicked)
     (e/push! mouse @[:triple-click (fj/get-mouse-position)])
@@ -223,18 +224,18 @@
   (handle-keys dt)
   (handle-scroll)
   (handle-resize)
-
+  #
   (e/push! frame-chan @[:dt dt])
-
+  #
   (handle-mouse mouse-data)
-
+  #
   (comment
     (when (fj/mouse-button-pressed? 0)
       # uses arrays in order to have reference identity rather than
       # value identity
       # relevant for callback handling
       (e/push! mouse @[:press (fj/get-mouse-position)])))
-
+  #
   (e/pull-deps (deps :deps) (deps :finally)))
 
 (defn subscribe-first!
@@ -242,7 +243,7 @@
   Take an event emitter (e.g. a ev/channel) and a callback (e.g.
   single arity function).
 
-  Creates a regular subscription.
+  Creates a subscription that sits before any existing ones.
   ``
   [emitter cb]
   (unless (find |(= $ cb) (get-in deps [:deps emitter] []))
@@ -289,7 +290,7 @@
   Take an event emitter (e.g. a ev/channel) and a callback (e.g.
   single arity function).
 
-  Removes a finFally subscription.
+  Removes a finally subscription.
   ``
   [emitter cb]
   (update-in deps [:finally emitter]
