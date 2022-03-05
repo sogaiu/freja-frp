@@ -6,33 +6,38 @@
 
 # functions to not block the fiber when interacting with channels
 (defn pop
-  "Like ev/take but non-blocking, instead returns `nil` if the channel is empty."
+  ``
+  Like `ev/take` but non-blocking, instead returns `nil` if the
+  channel is empty.
+  ``
   [chan]
   (when (pos? (ev/count chan))
     (ev/take chan)))
 
 (defn push!
-  "Like ev/give, but if the channel is full, throw away the oldest value."
+  ``
+  Like `ev/give`, but if the channel is full, throw away the
+  oldest value.
+  ``
   [chan v]
   (when (ev/full chan)
     (ev/take chan)) ## throw away old values
   (ev/give chan v))
 
 (defn vs
-  "Returns the values in a channel."
+  ``
+  Returns the values in a channel.
+  ``
   [chan]
   (def vs @[])
-
   # empty the queue
   (loop [v :iterate (pop chan)]
     (array/push vs v))
-
   # then put them back again
   (loop [v :in vs]
     (push! chan v))
-
+  #
   vs)
-
 
 # we want to be able to pull
 # multiple things should be able to pull from it
@@ -41,39 +46,55 @@
 (defn pull
   [pullable pullers]
   (when-let [v (case (type pullable)
-                 :core/channel (pop pullable)
-                 :table (when (pullable :event/changed)
-                          (put pullable :event/changed false))
-                 (error (string (type pullable) " is not a pullable.")))]
+                 :core/channel
+                 (pop pullable)
+                 #
+                 :table
+                 (when (pullable :event/changed)
+                   (put pullable :event/changed false))
+                 #
+                 (errorf "%s is not a pullable." (type pullable)))]
     (loop [puller :in pullers]
       (try
         (case (type puller)
-          :function (puller v)
-          :core/channel (push! puller v)
-          :table (:on-event puller v)
-          (error (string "Pulling not implemented for " (type puller))))
+          :function
+          (puller v)
+          #
+          :core/channel
+          (push! puller v)
+          #
+          :table
+          (:on-event puller v)
+          #
+          (errorf "Pulling not implemented for %s" (type puller)))
         ([err fib]
-          (push! state/eval-results (if (and (dictionary? err) (err :error))
-                                      err
-                                      {:error err
-                                       :fiber fib
-                                       :msg (string/format ``
-%s
-event:
-%p
-subscriber:
-%p
-``
-                                                           err
-                                                           (if (dictionary? v)
-                                                             (string/format "dictionary with keys: %p" (keys v))
-                                                             v)
-                                                           (if (dictionary? puller)
-                                                             (string/format "dictionary with keys: %p" (keys puller))
-                                                             puller))
-                                       :cause [v puller]})))))
-    v) # if there was a value, we return it
-)
+          (push! state/eval-results
+                 (if (and (dictionary? err) (err :error))
+                   err
+                   (let [event
+                         (if (dictionary? v)
+                           (string/format "dictionary with keys: %p"
+                                          (keys v))
+                           v)
+                         subscriber
+                         (if (dictionary? puller)
+                           (string/format "dictionary with keys: %p"
+                                          (keys puller))
+                           puller)]
+                     {:error err
+                      :fiber fib
+                      :msg (string/format
+                             ``
+                             %s
+                             event:
+                             %p
+                             subscriber:
+                             %p
+                             ``
+                             err event subscriber)
+                      :cause [v puller]}))))))
+    # if there was a value, we return it
+    v))
 
 (defn pull-all
   [pullable pullers]
@@ -102,19 +123,21 @@ subscriber:
                   @{:history (ev/chan 10000)
                     :on-event (fn [self ev]
                                 (update self :history push! ev))})
-
+      #
       :table
       (array/push pullers
                   @{:history (freeze pullable)
                     :on-event (fn [self ev] nil)})))
-
   pullables)
 
 (defn fresh?
   [pullable]
   (case (type pullable)
-    :core/channel (pos? (ev/count pullable))
-    :table (pullable :event/changed)))
+    :core/channel
+    (pos? (ev/count pullable))
+    #
+    :table
+    (pullable :event/changed)))
 
 (varfn pull-deps
   [deps &opt finally]
@@ -124,7 +147,6 @@ subscriber:
   (while (some fresh? (keys deps))
     (loop [[pullable pullers] :pairs deps]
       (pull-all pullable pullers)))
-
   # then when all is done, run the things in `finally`
   (loop [[pullable pullers] :pairs (or finally {})]
     (pull-all pullable pullers)))

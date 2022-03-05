@@ -13,7 +13,7 @@
    :left-shift
    :left-super
    :caps-lock
-
+   #
    (keyword "'")
    (keyword ",")
    :-
@@ -108,3 +108,4 @@
    :x
    :y
    :z])
+

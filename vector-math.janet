@@ -17,13 +17,12 @@
     (let [[x y] v]
       (math/sqrt (+ (math/pow x 2)
                     (math/pow y 2))))
-
     3
     (let [[x y z] v]
       (math/sqrt (+ (math/pow x 2)
                     (math/pow y 2)
                     (math/pow z 2))))
-
+    #
     (error "mag only works on v2 / v3")))
 
 (varfn mag-sqr
@@ -33,13 +32,12 @@
     (let [[x y] v]
       (+ (math/pow x 2)
          (math/pow y 2)))
-
     3
     (let [[x y z] v]
       (+ (math/pow x 2)
          (math/pow y 2)
          (math/pow z 2)))
-
+    #
     (error "mag-sqr only works on v2 / v3")))
 
 (varfn dist-sqr
@@ -60,3 +58,4 @@
       (/ p m))
     (seq [_ :in v]
       0)))
+

@@ -1,8 +1,4 @@
-#(import ./new_gap_buffer :prefix "")
-#(import ./theme :prefix "")
-
-#(setdyn :freja/ns "freja/state")
-
+# XXX: this shadows a janet built-in
 (var quit false)
 
 (var gb-binds nil)
@@ -36,16 +32,20 @@
 (defn ext->editor
   [ext &opt data]
   (default ext
-    (do (print "no ext provided, defaulting to .janet")
+    (do
+      (print "no ext provided, defaulting to .janet")
       ".janet"))
   (def compo (get editor-components ext))
   (default compo
-    (do (print "no component found for " ext ", defaulting to .janet")
+    (do
+      (printf "no component found for %s, defaulting to .janet" ext)
       (editor-components ".janet")))
   (def state-creator (get editor-state-creators ext))
   (default state-creator
-    (do (print "no state-creator found for " ext ", defaulting to .janet")
+    (do
+      (printf "no state-creator found for %s, defaulting to .janet" ext)
       (editor-state-creators ".janet")))
+  #
   [(compo data) (state-creator data)])
 
 (defn add-ext-handling
@@ -55,15 +55,17 @@
 
 (defn push-buffer-stack
   [o]
-  (def new-stack (-> (filter |(not= o $) (editor-state :stack))
-                     (array/push o)))
+  (def new-stack
+    (-> (filter |(not= o $) (editor-state :stack))
+        (array/push o)))
   (-> editor-state
       (put :stack new-stack)
       (put :event/changed true)))
 
 (defn remove-buffer-stack
   [o]
-  (def new-stack (filter |(not= o $) (editor-state :stack)))
+  (def new-stack
+    (filter |(not= o $) (editor-state :stack)))
   (-> editor-state
       (put :stack new-stack)
       (put :event/changed true)))
