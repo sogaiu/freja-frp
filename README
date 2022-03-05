@@ -1,0 +1,8 @@
+Simplified frp extracted from freja by saikyun
+
+Via a terminal, start by: `janet main.janet`
+
+Move mouse in window, type keys, etc. examine terminal output.
+
+Consider looking at `main.janet` and `frp.janet` for comprehension.
+
